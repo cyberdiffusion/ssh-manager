@@ -7,6 +7,19 @@ Built with **Electron + React + TypeScript**.
 ![SSH Manager](https://img.shields.io/badge/platform-macOS-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="screenshots/host-editor.png" alt="Host Editor" width="480"/></td>
+    <td><img src="screenshots/key-generator.png" alt="Key Generator" width="480"/></td>
+  </tr>
+  <tr>
+    <td align="center">Host Editor</td>
+    <td align="center">Key Generator</td>
+  </tr>
+</table>
+
 ## Features
 
 - 📋 **Host List** — browse, search, and filter all SSH hosts
