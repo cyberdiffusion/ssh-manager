@@ -58,7 +58,10 @@ export default function HostList({ hosts, selectedId, onSelect, onAdd, onEdit, o
 
   const openInTerminal = async (host: SSHHost) => {
     closeCtx()
-    await ipc.openTerminal(host.alias)
+    const result = await ipc.openTerminal(host.alias)
+    if (!result.success) {
+      showToast(`Terminal acilamadi: ${result.error}`)
+    }
   }
 
   const handleDelete = (id: string) => {

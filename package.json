@@ -1,11 +1,13 @@
 {
   "name": "ssh-manager",
   "version": "1.0.0",
-  "description": "macOS SSH Config Manager",
+  "description": "Desktop SSH Config Manager",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build && electron-builder",
+    "build:win": "vite build && electron-builder --win nsis",
+    "build:win:portable": "vite build && electron-builder --win portable",
     "preview": "vite preview"
   },
   "devDependencies": {
@@ -35,6 +37,21 @@
       "target": [
         { "target": "dmg", "arch": ["universal"] }
       ]
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SSH Manager",
+      "runAfterFinish": true,
+      "artifactName": "${productName} Setup ${version}.${ext}"
     },
     "files": ["dist/**/*", "dist-electron/**/*"],
     "directories": {
