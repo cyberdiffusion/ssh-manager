@@ -11,16 +11,19 @@ const SSH_CONFIG_PATH = path.join(os.homedir(), '.ssh', 'config')
 const SSH_DIR = path.join(os.homedir(), '.ssh')
 
 function createWindow() {
+  const isMac = process.platform === 'darwin'
   const win = new BrowserWindow({
     width: 1100,
     height: 700,
     minWidth: 800,
     minHeight: 500,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 16, y: 16 },
-    vibrancy: 'sidebar',
-    visualEffectState: 'active',
     backgroundColor: '#1a1a1a',
+    ...(isMac ? {
+      titleBarStyle: 'hiddenInset' as const,
+      trafficLightPosition: { x: 16, y: 16 },
+      vibrancy: 'sidebar' as const,
+      visualEffectState: 'active' as const,
+    } : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -48,6 +51,20 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+
+function openWindowsTerminal(command: string) {
+  const proc = spawn(
+    'cmd.exe',
+    ['/c', 'start', '', 'cmd.exe', '/k', command],
+    {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: false,
+    }
+  )
+
+  proc.unref()
+}
 
 // ── IPC Handlers ──────────────────────────────────────────────────────────────
 
@@ -131,7 +148,7 @@ ipcMain.handle('ssh:testConnection', async (_event, host: string) => {
   })
 })
 
-// Open SSH session in Terminal.app or iTerm2
+// Open SSH session in a platform-appropriate terminal window
 ipcMain.handle('ssh:openTerminal', async (_event, alias: string) => {
   try {
     // Sanitize: alias must not contain shell metacharacters
@@ -140,23 +157,28 @@ ipcMain.handle('ssh:openTerminal', async (_event, alias: string) => {
     }
     const cmd = `ssh ${alias}`
 
-    // Each line must be a separate -e argument to avoid osascript syntax errors
-    const useITerm = fs.existsSync('/Applications/iTerm.app')
+    if (process.platform === 'darwin') {
+      const useITerm = fs.existsSync('/Applications/iTerm.app')
+      const scriptArgs = useITerm
+        ? [
+            '-e', 'tell application "iTerm"',
+            '-e', `create window with default profile command "${cmd}"`,
+            '-e', 'end tell',
+          ]
+        : [
+            '-e', 'tell application "Terminal"',
+            '-e', `do script "${cmd}"`,
+            '-e', 'activate',
+            '-e', 'end tell',
+          ]
 
-    const scriptArgs = useITerm
-      ? [
-          '-e', 'tell application "iTerm"',
-          '-e', `create window with default profile command "${cmd}"`,
-          '-e', 'end tell',
-        ]
-      : [
-          '-e', 'tell application "Terminal"',
-          '-e', `do script "${cmd}"`,
-          '-e', 'activate',
-          '-e', 'end tell',
-        ]
+      await execFileAsync('osascript', scriptArgs)
+    } else if (process.platform === 'win32') {
+      openWindowsTerminal(cmd)
+    } else {
+      return { success: false, error: `Unsupported platform: ${process.platform}` }
+    }
 
-    await execFileAsync('osascript', scriptArgs)
     return { success: true }
   } catch (err) {
     return { success: false, error: String(err) }
